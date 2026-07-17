@@ -31,7 +31,9 @@
     "winston": "^3.13.0",
     "zod": "^3.23.8"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
   "engines": {
     "node": ">=20"
   }
