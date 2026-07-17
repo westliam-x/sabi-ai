@@ -123,6 +123,19 @@ export const SABI_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "setup_wallet",
+    description:
+      "Set up the business's Blaaiz payment wallet. Requires the owner's government ID (NIN, BVN, or passport). Only call this after the user has explicitly provided their ID number.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id_type: { type: "string", enum: ["nin", "bvn", "passport"], description: "Type of ID provided" },
+        id_number: { type: "string", description: "The ID number" },
+      },
+      required: ["id_type", "id_number"],
+    },
+  },
+  {
     name: "check_wallet_balance",
     description: "Check the current Blaaiz wallet balance for the business",
     input_schema: { type: "object", properties: {}, required: [] },
@@ -310,6 +323,28 @@ export const executeTool = async (
           text: input.body as string,
         });
         return JSON.stringify({ success: true });
+      }
+
+      case "setup_wallet": {
+        if (business.blaaizWalletId) {
+          return JSON.stringify({
+            success: true,
+            message: "Wallet already set up",
+            virtual_account: business.blaaizVirtualAccountNumber
+              ? { number: business.blaaizVirtualAccountNumber, bank: business.blaaizVirtualAccountBank }
+              : null,
+          });
+        }
+        const { provisionBlaaizWallet } = await import("../services/onboarding.service");
+        await provisionBlaaizWallet(business, input.id_type as string, input.id_number as string);
+        return JSON.stringify({
+          success: true,
+          wallet_id: business.blaaizWalletId,
+          virtual_account: {
+            number: business.blaaizVirtualAccountNumber,
+            bank: business.blaaizVirtualAccountBank,
+          },
+        });
       }
 
       case "check_wallet_balance": {

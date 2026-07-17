@@ -10,6 +10,8 @@ export interface BlaaizCustomerPayload {
   phone_number?: string;
   country?: string;
   type?: string;
+  id_type?: string;
+  id_number?: string;
 }
 
 export interface BlaaizWallet {

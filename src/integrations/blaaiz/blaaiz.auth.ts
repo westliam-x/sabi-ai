@@ -16,14 +16,19 @@ export const getBlaaizAccessToken = async (): Promise<string> => {
     throw new Error("Blaaiz OAuth not configured — set BLAAIZ_CLIENT_ID and BLAAIZ_CLIENT_SECRET");
   }
 
+  const params: Record<string, string> = {
+    grant_type: "client_credentials",
+    client_id: cfg.clientId,
+    client_secret: cfg.clientSecret,
+  };
+
+  const scope = process.env.BLAAIZ_OAUTH_SCOPE?.trim();
+  if (scope) params.scope = scope;
+
   const res = await fetch(`${cfg.baseUrl}${cfg.tokenPath}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: cfg.clientId,
-      client_secret: cfg.clientSecret,
-    }),
+    body: new URLSearchParams(params),
   });
 
   if (!res.ok) {

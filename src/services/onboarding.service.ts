@@ -66,14 +66,9 @@ export const handleOnboarding = async (
       biz.onboardingState = "complete";
       await biz.save();
 
-      // Provision Blaaiz wallet in the background
-      provisionBlaaizWallet(biz).catch((err) =>
-        logger.error("onboarding.blaaiz_provision_failed", { phone: phoneNumber, err })
-      );
-
       return {
         done: false,
-        prompt: `✅ All set, *${biz.ownerName}*!\n\n*${biz.businessName}* is ready on Sabi.\n\nI'm setting up your payment wallet now — I'll let you know when it's ready.\n\nYou can start talking to me any time. Just say things like:\n• "Tunde ordered 2 native, paid 10k deposit, delivery in 2 weeks"\n• "How much do I have pending?"\n• "Send Tunde a reminder for his balance"\n\nI'll handle the rest. 💪`,
+        prompt: `✅ All set, *${biz.ownerName}*!\n\n*${biz.businessName}* is ready on Sabi.\n\nYou can start talking to me any time. Just say things like:\n• "Tunde ordered 2 native, paid 10k deposit, delivery in 2 weeks"\n• "How much do I have pending?"\n• "Send Tunde a reminder for his balance"\n\nWhen you're ready to receive payments through Sabi, just say "set up my wallet" — I'll need your NIN or BVN for that.\n\nI'll handle the rest. 💪`,
       };
     }
 
@@ -82,9 +77,17 @@ export const handleOnboarding = async (
   }
 };
 
-/** Create a Blaaiz customer + NGN wallet + virtual bank account for the business */
-const provisionBlaaizWallet = async (biz: IBusiness) => {
-  if (!biz.ownerName || !biz.phoneNumber) return;
+/**
+ * Create a Blaaiz customer + NGN wallet + virtual bank account for the business.
+ * Requires the owner's ID (NIN/BVN) — Blaaiz mandates id_type + id_number for individuals.
+ * Called by the agent's setup_wallet tool once the user provides their ID.
+ */
+export const provisionBlaaizWallet = async (
+  biz: IBusiness,
+  idType: string,
+  idNumber: string
+) => {
+  if (!biz.ownerName || !biz.phoneNumber) throw new Error("Business missing owner name or phone");
 
   const [firstName, ...rest] = biz.ownerName.split(" ");
   const lastName = rest.join(" ") || "Business";
@@ -98,6 +101,8 @@ const provisionBlaaizWallet = async (biz: IBusiness) => {
     phone_number: biz.phoneNumber,
     country: "NG",
     type: "individual",
+    id_type: idType,
+    id_number: idNumber,
   });
   biz.blaaizCustomerId = customerRes.data.id;
 

@@ -10,8 +10,9 @@ const router = Router();
  * Must return 200 quickly — processing is fire-and-forget.
  */
 router.post("/", (req: Request, res: Response) => {
-  // Respond immediately so Twilio doesn't retry
-  res.sendStatus(200);
+  // Respond with empty TwiML immediately — a plain-text body (e.g. res.sendStatus's "OK")
+  // gets echoed back to the user as a WhatsApp message by Twilio
+  res.type("text/xml").send("<Response></Response>");
 
   const body = req.body;
   const from = (body.From as string || "").replace("whatsapp:", "");
